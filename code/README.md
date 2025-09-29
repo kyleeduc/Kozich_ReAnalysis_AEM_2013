@@ -14,8 +14,9 @@ rm -rf __MACOSX
 mothur should output the version by doing...
 
 ```bash
-code/mothur/mothur -v
+~/code/mothur -v
 ```
+
 
 
 
