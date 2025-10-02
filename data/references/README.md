@@ -1,4 +1,4 @@
-# README
+## README
 Obtained the silva reference alignment from the mothur website:
 ```bash
 wget https://mothur.s3.us-east-2.amazonaws.com/wiki/silva.seed_v123.tgz
