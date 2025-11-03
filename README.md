@@ -23,6 +23,10 @@ with age (Fig. 4) (Mantel test coefficient, 0.81; P < 0.001). These results clea
 indicate that our approach can be scaled to multiplex large numbers of samples.
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
 ### Overview
 
 	project

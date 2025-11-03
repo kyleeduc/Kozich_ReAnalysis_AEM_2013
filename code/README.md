@@ -1,3 +1,4 @@
+## README
 Obtained the Linux version of mothur (v1.39.5) from the mothur GitHub repository
 ```bash
 wget --no-check-certificate https://github.com/mothur/mothur/releases/download/v1.39.5/Mothur.linux_64.zip
@@ -10,10 +11,3 @@ mothur should output the version by doing...
 ```bash
 code/mothur/mothur -v
 ```
-
-
-
-
-
-
-
