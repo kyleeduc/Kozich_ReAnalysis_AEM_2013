@@ -1,3 +1,14 @@
+
+.Rproj.user
+.Rhistory
+.RData
+R
+mothur/
+
+.DS_Store
+
+
+code/mothur/*
 data/*/*
 !data/process/*
 !README.md
