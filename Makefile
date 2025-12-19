@@ -3,6 +3,7 @@ FIGS = results/figures
 TABLES = results/tables
 PROC = data/process
 FINAL = submission/
+MOTHUR = code/mothur/mothur
 
 # utility function to print various variables. For example, running the
 # following at the command line:
@@ -16,7 +17,7 @@ print-%:
 
 
 # Obtained the Linux version of mothur (v1.39.5) from the mothur GitHub repository
-code/mothur :
+$(MOTHUR) :
 	wget --no-check-certificate https://github.com/mothur/mothur/releases/download/v1.39.5/Mothur.linux_64.zip
 	unzip Mothur.linux_64.zip
 	mv mothur code/
@@ -28,31 +29,27 @@ code/mothur :
 # Part 1: Get the references
 #
 # We will need several reference files to complete the analyses including the
-# SILVA reference alignment and RDP reference taxonomy. Note that this code
-# assumes that mothur is in your PATH. If not (e.g. it's in code/mothur/, you
-# will need to replace `mothur` with `code/mothur/mothur` throughout the
-# following code.
+# SILVA reference alignment and RDP reference taxonomy.
 #
 ################################################################################
 
 # We want the latest greatest reference alignment and the SILVA reference
 # alignment is the best reference alignment on the market. This version is from
-# 132 and described at http://blog.mothur.org/2018/01/10/SILVA-v132-reference-files/
-# We will use the SEED v. 132, which contain 12,083 bacterial sequences. This
+# v123 and described at http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/
+# We will use the SEED v. 123, which contain 12,083 bacterial sequences. This
 # also contains the reference taxonomy. We will limit the databases to only
 # include bacterial sequences.
 
-$(REFS)/silva.seed.align : code/mothur
-	wget -N https://mothur.org/w/images/7/71/Silva.seed_v132.tgz
-	tar xvzf Silva.seed_v132.tgz silva.seed_v132.align silva.seed_v132.tax
-	mothur "#get.lineage(fasta=silva.seed_v132.align, taxonomy=silva.seed_v132.tax, taxon=Bacteria);degap.seqs(fasta=silva.seed_v132.pick.align, processors=8)"
-	mv silva.seed_v132.pick.align $(REFS)/silva.seed.align
-	rm Silva.seed_v132.tgz silva.seed_v132.*
+$(REFS)/silva.seed.align : $(MOTHUR)
+	wget -N http://mothur.org/w/images/1/15/Silva.seed_v123.tgz
+	tar xvzf Silva.seed_v123.tgz silva.seed_v123.align silva.seed_v123.tax
+	$(MOTHUR) "#get.lineage(fasta=silva.seed_v123.align, taxonomy=silva.seed_v123.tax, taxon=Bacteria);degap.seqs(fasta=silva.seed_v123.pick.align, processors=8)"
+	mv silva.seed_v123.pick.align $(REFS)/silva.seed.align
+	rm Silva.seed_v123.tgz silva.seed_v123.*
 
-$(REFS)/silva.v4.align : $(REFS)/silva.seed.align
-	mothur "#pcr.seqs(fasta=$(REFS)/silva.seed.align, start=11894, end=25319, keepdots=F, processors=8)"
+$(REFS)/silva.v4.align : $(REFS)/silva.seed.align $(MOTHUR)
+	$(MOTHUR) "#pcr.seqs(fasta=$(REFS)/silva.seed.align, start=11894, end=25319, keepdots=F, processors=8)"
 	mv $(REFS)/silva.seed.pcr.align $(REFS)/silva.v4.align
-
 
 # Next, we want the RDP reference taxonomy. The current version is v10 and we
 # use a "special" pds version of the database files, which are described at
@@ -65,10 +62,9 @@ $(REFS)/trainset14_032015.% :
 	rm -rf trainset14_032015.pds
 	rm Trainset14_032015.pds.tgz
 
-
 ################################################################################
 #
-# Part 2: Get and run data through mothur
+# Part 2: Run data through mothur
 #
 #	Process fastq data through the generation of files that will be used in the
 # overall analysis.
@@ -77,14 +73,14 @@ $(REFS)/trainset14_032015.% :
 
 
 # Obtained the raw `fastq.gz` files from https://www.mothur.org/MiSeqDevelopmentData.html
-# * Downloaded https://mothur.s3.us-east-2.amazonaws.com/data/MiSeqDevelopmentData/StabilityWMetaG.tar
-
+# * Downloaded https://www.mothur.org/MiSeqDevelopmentData/StabilityWMetaG.tar
 # * Ran the following from the project's root directory
 
 data/raw/StabilityWMetaG.tar :
-	wget --no-check-certificate https://mothur.s3.us-east-2.amazonaws.com/data/MiSeqDevelopmentData/StabilityWMetaG.tar
+	wget --no-check-certificate https://www.mothur.org/MiSeqDevelopmentData/StabilityWMetaG.tar
 	tar xvf StabilityWMetaG.tar -C data/raw/
 	mv StabilityWMetaG.tar data/raw/
+
 
 # Change stability to the * part of your *.files file that lives in data/raw/
 BASIC_STEM = data/mothur/stability.trim.contigs.good.unique.good.filter.unique.precluster
@@ -105,6 +101,7 @@ $(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta 
 	rm data/mothur/*.map
 
 
+
 # here we go from the good sequences and generate a shared file and a
 # cons.taxonomy file based on OTU data
 
@@ -114,8 +111,9 @@ $(BASIC_STEM).denovo.uchime.pick.pick.count_table $(BASIC_STEM).pick.pick.fasta 
 $(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.shared $(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.0.03.cons.taxonomy : code/get_shared_otus.batch\
 					$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
 					$(BASIC_STEM).pick.pick.fasta\
-					$(BASIC_STEM).pick.pds.wang.pick.taxonomy
-	mothur code/get_shared_otus.batch
+					$(BASIC_STEM).pick.pds.wang.pick.taxonomy\
+					$(MOTHUR)
+	$(MOTHUR) code/get_shared_otus.batch
 	rm $(BASIC_STEM).denovo.uchime.pick.pick.pick.count_table
 	rm $(BASIC_STEM).pick.pick.pick.fasta
 	rm $(BASIC_STEM).pick.pds.wang.pick.pick.taxonomy;
@@ -129,8 +127,11 @@ $(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.shared $(BASIC_STEM).pick.pick
 $(BASIC_STEM).pick.pick.pick.error.summary : code/get_error.batch\
 					$(BASIC_STEM).denovo.uchime.pick.pick.count_table\
 					$(BASIC_STEM).pick.pick.fasta\
-					$(REFS)/HMP_MOCK.v4.fasta
-	mothur code/get_error.batch
+					$(REFS)/HMP_MOCK.v4.fasta\
+					$(MOTHUR)
+	$(MOTHUR) code/get_error.batch
+
+
 
 
 
@@ -142,11 +143,16 @@ $(BASIC_STEM).pick.pick.pick.error.summary : code/get_error.batch\
 #
 ################################################################################
 
+
+# Generate data to plot NMDS ordination
+$(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.thetayc.0.03.lt.ave.nmds.axes: $(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.shared $(MOTHUR)
+	$(MOTHUR) code/get_nmds_data.batch
+
+
 # Construct NMDS png file
-results/figures/nmds_figure.png: code/plot_nmds.R\
+results/figures/nmds_figure.png : code/plot_nmds.R\
 				$(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.thetayc.0.03.lt.ave.nmds.axes
 	R -e "source('code/plot_nmds.R'); plot_nmds('$(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.thetayc.0.03.lt.ave.nmds.axes')"
-
 
 ################################################################################
 #
@@ -156,7 +162,6 @@ results/figures/nmds_figure.png: code/plot_nmds.R\
 #
 ################################################################################
 
-
 $(FINAL)/manuscript.% : results/figures/nmds_figure.png\
 						$(BASIC_STEM).pick.pick.pick.opti_mcc.unique_list.shared\
 						$(FINAL)/mbio.csl\
@@ -165,7 +170,6 @@ $(FINAL)/manuscript.% : results/figures/nmds_figure.png\
 	R -e 'render("$(FINAL)/manuscript.Rmd", clean=FALSE)'
 	mv $(FINAL)/manuscript.knit.md submission/manuscript.md
 	rm $(FINAL)/manuscript.utf8.md
-
 
 write.paper : results/figures/nmds_figure.png\
 				$(FINAL)/manuscript.Rmd $(FINAL)/manuscript.md\
